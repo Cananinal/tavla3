@@ -7,6 +7,8 @@ import json
 import uuid
 import copy
 import time
+import pytz
+
 from pygammon.core import Game
 from pygammon.structures import (
     GameState, InputType, InvalidMoveCode, OutputType, Side, DieRolls
@@ -819,7 +821,7 @@ def cleanup_inactive_games():
 
 # Belirli aralıklarla cleanup işlemini çağır
 scheduler = BackgroundScheduler()
-scheduler.add_job(cleanup_inactive_games, 'interval', minutes=30)
+scheduler.add_job(cleanup_inactive_games, 'interval', minutes=30, timezone=pytz.utc)
 scheduler.start()
 
 # Flask uygulamasını durdurduğunda scheduler'ı da durdur
