@@ -1,24 +1,8 @@
-from pygammon.structures import Side, GameState
+from pygammon.structures import Side
 from pygammon.core import Game
 import json
 
-from firebase_admin import firestore
-
-db = firestore.client()
-
-# ─────────────────────────────
-# Kullanıcı verilerini Firestore'a kaydet ve al
-# ─────────────────────────────
-
-def get_user(username):
-    """Firestore'dan kullanıcı verisini getir"""
-    doc_ref = db.collection("users").document(username)
-    return doc_ref.get()
-
-def save_user(username, data):
-    """Firestore'a kullanıcı verisi kaydet"""
-    doc_ref = db.collection("users").document(username)
-    doc_ref.set(data)
+# Bu dosya sadece serialize/deserialize işlemleri için kullanılacak
 
 # ─────────────────────────────
 # Game objesini serileştir / deserileştir
