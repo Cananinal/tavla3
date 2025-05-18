@@ -1,32 +1,26 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from werkzeug.security import generate_password_hash, check_password_hash
-from functools import wraps   # <─ login_required için
+from functools import wraps
 import random
 import json
 import uuid
 import copy
 import time
 import pytz
-
 from pygammon.core import Game
-from pygammon.structures import (
-    GameState, InputType, InvalidMoveCode, OutputType, Side, DieRolls
-)
+from pygammon.structures import GameState, InputType, InvalidMoveCode, OutputType, Side, DieRolls
 from pygammon.exceptions import InvalidMove, GameWon
 import os
 from firebase_config import FirebaseConfig
-from firebase_utils import serialize_game, deserialize_game
+from firebase_utils import serialize_game, deserialize_game, get_user, save_user
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 
-# Firebase örneği oluşturun
 firebase = FirebaseConfig()
-
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "tavla-gizli-anahtar"
 
-# Socket.IO yapılandırması
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
@@ -34,23 +28,14 @@ socketio = SocketIO(
     engineio_logger=True,
     ping_timeout=20,
     ping_interval=5,
-    async_mode='eventlet'  # Cloud Run'da eventlet kullanımı gereklidir
+    async_mode='eventlet'
 )
 
-# Hafızadaki games sözlüğü (geçici olarak kullanılacak)
-# Not: Firebase ile tamamen kaldırılabilir ancak geçiş için tutuyoruz
 games = {}
-
-# Kullanıcı sid eşleştirmesi
 user_sid = {}
 sid_user = {}
 
-# ---------------------------------------------------------------------------
-#  LOGIN REQUIRED DECORATOR  -------------------------------------------------
-# ---------------------------------------------------------------------------
-
 def login_required(view):
-    """Her istekte oturum var mı kontrol et. Yoksa /login'e yönlendir."""
     @wraps(view)
     def wrapper(*args, **kwargs):
         if "user_id" not in session:
@@ -58,57 +43,41 @@ def login_required(view):
         return view(*args, **kwargs)
     return wrapper
 
-# ---------------------------------------------------------------------------
-#  AUTH ROUTES  --------------------------------------------------------------
-# ---------------------------------------------------------------------------
-
-# GİRİŞ POST
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        
-        # Kullanıcıyı bul
-        user_doc = firebase.get_user(username)
-        
-        # Şifre kontrolü
-        if user_doc.exists and check_password_hash(user_doc.to_dict()['password'], password):
-            # Oturuma kullanıcı bilgilerini kaydet
-            session['user_id'] = username  # Firestore'da id yerine username kullanıyoruz
+        user_doc = get_user(username)
+        if user_doc.exists and check_password_hash(user_doc.to_dict().get('password'), password):
+            session['user_id'] = username
             session['username'] = username
-            return redirect('/')  # Ana sayfaya yönlendir
-        
+            return redirect('/')
         return render_template('login.html', error='Geçersiz kullanıcı adı veya şifre')
-    else:
-        return render_template('login.html')
+    return render_template('login.html')
 
-# KAYIT POST
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        
-        # Kullanıcı adını kontrol et
-        user_doc = firebase.get_user(username)
+        user_doc = get_user(username)
         if user_doc.exists:
             return render_template('register.html', error='Kullanıcı adı zaten mevcut')
-        
-        # Şifreyi güvenli şekilde hashle
         hashed_password = generate_password_hash(password)
-        
-        # Yeni kullanıcı oluştur
-        firebase.create_user(username, hashed_password)
-        
+        save_user(username, {
+            'username': username,
+            'password': hashed_password,
+            'game': {}
+        })
         return redirect('/login')
-    else:
-        return render_template('register.html')
+    return render_template('register.html')
 
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/login")
+
 
 # ---------------------------------------------------------------------------
 #  MAIN ROUTES  --------------------------------------------------------------
