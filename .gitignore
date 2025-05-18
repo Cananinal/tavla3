@@ -1,0 +1,27 @@
+# Python derleme dosyaları
+__pycache__/
+*.py[cod]
+
+# Gizli JSON dosyaları (örneğin Firebase admin sdk anahtarları)
+*.json
+
+# Firebase yapılandırması
+firebase_config.py
+
+# Ortam değişkeni dosyası
+.env
+
+# IDE ve editör dosyaları
+.vscode/
+*.code-workspace
+
+# Log dosyaları
+*.log
+
+# Sistem dosyaları
+.DS_Store
+Thumbs.db
+
+# Docker build dosyaları
+.dockerignore
+Dockerfile
