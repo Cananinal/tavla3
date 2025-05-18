@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tavla Oyunu</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Durum bildirimi için kayan notification elementi -->
+    <div id="status-indicator" class="status-indicator"></div>
+    
+    <div class="container-fluid mt-3">
+        <div class="row">
+            <!-- Oyun bilgileri ve durum -->
+            <div class="col-md-3">
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Oyun Bilgileri</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span>Oyun ID:</span>
+                            <span id="game-id" class="badge bg-secondary">{{ game_id }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span>Sıra:</span>
+                            <span id="current-player" class="badge bg-success">Bekleniyor...</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                              <span>Kullanıcı:</span>
+                              <span class="badge bg-dark">{{ session.username }}</span>
+                         </div>
+
+                        
+                        <!-- Sıranın kimde olduğunu daha açık göster -->
+                        <div id="turn-indicator" class="alert alert-info mb-3 text-center p-2" role="alert">
+                            Oyun bilgileri yükleniyor...
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="player-info mb-3">
+                            <h5>Birinci Oyuncu</h5>
+                            <div class="d-flex justify-content-between">
+                                <span>Kırılan Taşlar:</span>
+                                <span id="first-hit" class="badge bg-danger">0</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Çıkarılan Taşlar:</span>
+                                <span id="first-borne" class="badge bg-success">0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="player-info">                            <h5>İkinci Oyuncu</h5>                            <div class="d-flex justify-content-between">                                <span>Kırılan Taşlar:</span>                                <span id="second-hit" class="badge bg-danger">0</span>                            </div>                            <div class="d-flex justify-content-between">                                <span>Çıkarılan Taşlar:</span>                                <span id="second-borne" class="badge bg-success">0</span>                            </div>                        </div>                        <!-- Oyuncu tarafı göstergesi -->                        <div class="mt-3 player-side-info text-center p-2 border rounded">                            <h5 class="mb-2">Oyuncu Tarafınız:</h5>                            <div id="player-side-indicator" class="badge bg-secondary">Bekleniyor...</div>                        </div>                                                <!-- Bağlantı durumu göstergesi -->
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Bağlantı Durumu:</span>
+                                <span id="connection-status" class="badge bg-secondary">Bağlanıyor...</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Manuel yenileme butonu -->
+                        <button id="refresh-state-btn" class="btn btn-outline-primary btn-sm refresh-btn mt-3">
+                            <i class="fas fa-sync-alt"></i> Oyun Durumunu Yenile
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Zarlar</h4>
+                    </div>
+                    <div class="card-body text-center">
+                        <div id="dice-container" class="d-flex justify-content-center my-3">
+                            <!-- Zarlar buraya javascript ile eklenecek -->
+                        </div>
+                        <button id="roll-dice-btn" class="btn btn-primary w-100">Zar At</button>
+                        
+                        <!-- Pas butonu konteyner -->
+                        <div id="pass-button-container" class="mt-3">
+                            <!-- Pas butonu dinamik olarak eklenecek -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Sohbet</h4>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="chat-messages" class="chat-container p-2">
+                            <!-- Mesajlar buraya eklenecek -->
+                            <div class="chat-message system">Oyuna hoş geldiniz! Bağlantı kuruluyor...</div>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" id="chat-input" class="form-control" placeholder="Mesajınızı yazın...">
+                            <button id="send-message-btn" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tavla tahtası -->
+            <div class="col-md-9">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h3 class="mb-0">Tavla Tahtası</h3>
+                            <a href="/" class="btn btn-sm btn-light">Ana Sayfaya Dön</a>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="board-container" class="board-container">
+                            <!-- Kırık taşlar - Üst (İkinci Oyuncu) -->
+                            <div id="second-hit-area" class="hit-area second-hit">
+                                <!-- Kırık taşlar buraya eklenecek -->
+                            </div>
+                            
+                            <!-- Tavla tahtası - Üst kısım (12-23) -->
+                            <div class="board-upper">
+                                <div class="point-container">
+                                    <!-- 12-23 arası noktalar buraya javascript ile eklenecek -->
+                                </div>
+                            </div>
+                            
+                            <!-- Tavla tahtası - Orta çizgi -->
+                            <div class="board-middle">
+                                <!-- Orta alan gösterimi -->
+                            </div>
+                            
+                            <!-- Tavla tahtası - Alt kısım (0-11) -->
+                            <div class="board-lower">
+                                <div class="point-container">
+                                    <!-- 0-11 arası noktalar buraya javascript ile eklenecek -->
+                                </div>
+                            </div>
+                            
+                            <!-- Kırık taşlar - Alt (Birinci Oyuncu) -->
+                            <div id="first-hit-area" class="hit-area first-hit">
+                                <!-- Kırık taşlar buraya eklenecek -->
+                            </div>
+                            
+                            <!-- Çıkış alanları -->
+                            <div id="first-borne-area" class="borne-area first-borne">
+                                <!-- Birinci oyuncunun çıkardığı taşlar -->
+                            </div>
+                            <div id="second-borne-area" class="borne-area second-borne">
+                                <!-- İkinci oyuncunun çıkardığı taşlar -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bildirim Modalı -->
+    <div class="modal fade" id="notification-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="notification-title">Bildirim</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="notification-body"><!-- Bildirim içeriği buraya gelecek --></p>
+                    <div id="refresh-info" class="alert alert-info small mt-2 d-none">
+                        Bu pencereyi kapattığınızda sayfa otomatik olarak yenilenecektir.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Tamam</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.0/socket.io.min.js"></script>
+    <script>
+        // Oyun ID'sini javascript'e aktar
+        const GAME_ID = "{{ game_id }}";
+    </script>
+    <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+</body>
+</html> 

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tavla Oyunu - Lobi</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container mt-4">
+        <!-- Başlık ve Hoşgeldin Mesajı -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h2 class="mb-0">Tavla Oyunu Lobisi</h2>
+                            <div>
+                                <span class="me-3">Hoş geldiniz, <strong>{{ username }}</strong>!</span>
+                                <a href="/logout" class="btn btn-sm btn-light"><i class="fas fa-sign-out-alt"></i> Çıkış</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Ana İçerik -->
+        <div class="row">
+            <!-- Aktif Oyunlar Listesi -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3><i class="fas fa-gamepad"></i> Aktif Oyunlar</h3>
+                    </div>
+                    <div class="card-body">
+                        {% if active_games %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Oyun ID</th>
+                                            <th>Oyuncular</th>
+                                            <th>Durum</th>
+                                            <th>İşlem</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for game in active_games %}
+                                        <tr>
+                                            <td><code>{{ game.game_id }}</code></td>
+                                            <td>{{ game.players }}/2</td>
+                                            <td>
+                                                {% if game.players == 2 %}
+                                                    <span class="badge bg-success">Devam Ediyor</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">Oyuncu Bekleniyor</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if game.can_join %}
+                                                    <a href="/oyun/{{ game.game_id }}" class="btn btn-success btn-sm">Katıl</a>
+                                                {% else %}
+                                                    <a href="/oyun/{{ game.game_id }}" class="btn btn-secondary btn-sm">İzle</a>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> Şu anda aktif oyun bulunmuyor. Yeni bir oyun oluşturabilirsiniz!
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <button id="refresh-games-btn" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-sync-alt"></i> Listeyi Yenile
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Oyun Yönetimi -->
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h3><i class="fas fa-plus-circle"></i> Yeni Oyun</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Yeni bir tavla oyunu oluşturmak için aşağıdaki butona tıklayın:</p>
+                        <button id="yeni-oyun-btn" class="btn btn-success w-100">
+                            <i class="fas fa-gamepad"></i> Yeni Oyun Oluştur
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h3><i class="fas fa-sign-in-alt"></i> Oyuna Katıl</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Oyun ID'sini biliyorsanız doğrudan katılabilirsiniz:</p>
+                        <div class="input-group mb-3">
+                            <input type="text" id="oyun-id" class="form-control" placeholder="Oyun ID'sini girin...">
+                            <button id="katil-btn" class="btn btn-primary">
+                                <i class="fas fa-sign-in-alt"></i> Katıl
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+</body>
+</html>
